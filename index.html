@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Опрос</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: url('bg.jpg') center/cover no-repeat fixed;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px 24px;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+  }
+  h1 { font-size: 20px; margin-bottom: 24px; text-align: center; }
+  .question { margin-bottom: 20px; }
+  .question p { font-weight: 500; margin-bottom: 8px; font-size: 15px; }
+  input[type="text"] {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color 0.2s;
+  }
+  input[type="text"]:focus {
+    outline: none;
+    border-color: #007aff;
+    background: #f0f7ff;
+  }
+  button {
+    width: 100%;
+    padding: 14px;
+    margin-top: 8px;
+    background: #007aff;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  button:disabled { background: #b0b0b0; cursor: not-allowed; }
+  .hidden { display: none; }
+  .message { text-align: center; color: #666; font-size: 15px; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<div class="card" id="surveyCard">
+  <h1>Опрос</h1>
+  <form id="surveyForm">
+
+    <div class="question">
+      <p>1. Идёшь на закрытие?</p>
+      <input type="text" name="q1" placeholder="Ваш ответ" required>
+    </div>
+
+    <div class="question">
+      <p>2. Тип велосипеда</p>
+      <input type="text" name="q2" placeholder="Ваш ответ" required>
+    </div>
+
+    <div class="question">
+      <p>3. Твой Telegram</p>
+      <input type="text" name="q3" placeholder="@username" required>
+    </div>
+
+    <button type="submit" id="submitBtn">Отправить</button>
+  </form>
+</div>
+
+<div class="card hidden" id="doneCard">
+  <p class="message">Спасибо! Вы уже прошли опрос.</p>
+</div>
+
+<script>
+(function() {
+  // ↓↓↓ ЗАМЕНИ ТОЛЬКО ЭТУ СТРОКУ ↓↓↓
+  var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzjrRnghfwi_3uoBQoUE-bnQmw22kYTLykJGiX5jedC8ZOgEdta8fbpItG8XEk-iQEHpg/exec';
+  // ↑↑↑ заканчивается на /exec ↑↑↑
+
+  var STORAGE_KEY = 'survey_completed_v1';
+
+  if (localStorage.getItem(STORAGE_KEY) === 'true') {
+    document.getElementById('surveyCard').classList.add('hidden');
+    document.getElementById('doneCard').classList.remove('hidden');
+    return;
+  }
+
+  var form = document.getElementById('surveyForm');
+  var btn = document.getElementById('submitBtn');
+  var isSubmitting = false;
+
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    if (isSubmitting) return;
+    isSubmitting = true;
+    btn.disabled = true;
+    btn.textContent = 'Отправка...';
+
+    var formData = new FormData(form);
+    var params = new URLSearchParams();
+    formData.forEach(function(value, key) {
+      params.append(key, value);
+    });
+
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: params
+    })
+    .then(function(response) {
+      if (!response.ok) throw new Error('Ошибка сети');
+      return response.json();
+    })
+    .then(function(data) {
+      if (data.result === 'success') {
+        localStorage.setItem(STORAGE_KEY, 'true');
+        document.getElementById('surveyCard').classList.add('hidden');
+        document.getElementById('doneCard').classList.remove('hidden');
+      } else {
+        throw new Error('Сервер вернул ошибку');
+      }
+    })
+    .catch(function(err) {
+      console.error('Ошибка отправки:', err);
+      isSubmitting = false;
+      btn.disabled = false;
+      btn.textContent = 'Отправить';
+      alert('Не удалось отправить. Проверьте интернет и попробуйте ещё раз.');
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
